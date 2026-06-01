@@ -32,4 +32,3 @@ export const aiProcessQueue = new Queue('ai-process-queue', {
 
 console.log('[Queue] ✅ BullMQ queues initialized: rss-fetch-queue, ai-process-queue');
 
-export { rssFetchQueue, aiProcessQueue };
