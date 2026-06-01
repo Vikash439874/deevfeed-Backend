@@ -1,50 +1,51 @@
 import Redis from 'ioredis';
-import logger from './winston.js';
-import { captureException } from './sentry.js';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const redisHost = process.env.REDIS_HOST || '127.0.0.1';
 const redisPort = parseInt(process.env.REDIS_PORT || '6379', 10);
-const redisPassword = process.env.REDIS_PASSWORD || null;
+const redisPassword = process.env.REDIS_PASSWORD || undefined;
 
+// Plain config object — required by BullMQ Queue and Worker constructors
 const redisConfig = {
   host: redisHost,
   port: redisPort,
-  password: redisPassword,
-  maxRetriesPerRequest: null, // Critical requirement for BullMQ
+  ...(redisPassword ? { password: redisPassword } : {}),
+  maxRetriesPerRequest: null, // CRITICAL: BullMQ requires this to be null
+  enableReadyCheck: false,    // CRITICAL: BullMQ requires this to be false
   retryStrategy(times) {
-    const delay = Math.min(times * 50, 2000);
-    logger.warn(`[Redis] Connection lost. Attempting retry #${times} in ${delay}ms...`);
+    const delay = Math.min(times * 100, 3000);
+    console.warn(`[Redis] Reconnecting... attempt #${times}, waiting ${delay}ms`);
     return delay;
   }
 };
 
-let redisClient;
+// Shared ioredis client instance — used for health checks in /health route
+let redisClient = null;
 
 const getRedisClient = () => {
   if (!redisClient) {
-    try {
-      redisClient = new Redis(redisConfig);
+    redisClient = new Redis(redisConfig);
 
-      redisClient.on('connect', () => {
-        logger.info(`[Redis] Connected to server at redis://${redisHost}:${redisPort}`);
-      });
+    redisClient.on('connect', () => {
+      console.log(`[Redis] ✅ Successfully connected to Memurai/Redis at ${redisHost}:${redisPort}`);
+    });
 
-      redisClient.on('error', (err) => {
-        logger.error(`[Redis] Error connection state: ${err.message}`);
-        captureException(err, { tags: { component: 'redis' } });
-      });
+    redisClient.on('ready', () => {
+      console.log('[Redis] ✅ Client is ready and accepting commands.');
+    });
 
-      redisClient.on('ready', () => {
-        logger.info('[Redis] Client is ready for command operations.');
-      });
+    redisClient.on('error', (err) => {
+      console.error(`[Redis] ❌ Connection Error: ${err.message}`);
+      console.error('[Redis] Make sure Memurai is running. Check: Start Menu -> Memurai -> Start Service');
+    });
 
-    } catch (error) {
-      logger.error(`[Redis] Initialization crash: ${error.message}`);
-      captureException(error, { tags: { component: 'redis-init' } });
-    }
+    redisClient.on('close', () => {
+      console.warn('[Redis] Connection closed. Retrying...');
+    });
   }
   return redisClient;
 };
 
-export { getRedisClient, redisConfig };
+export { redisConfig, getRedisClient };
 export default getRedisClient;

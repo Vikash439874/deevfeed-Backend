@@ -1,8 +1,9 @@
-import 'dotenv/config'; //This instantly runs and loads everything first!
+import 'dotenv/config'; // Loads .env first — must stay at the top!
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import connectDB from './config/db.js';
+import { getRedisClient } from './config/redis.js';
 import { initSentry } from './config/sentry.js';
 import logger from './utils/loggerWrapper.js';
 import * as Sentry from '@sentry/node';
@@ -13,12 +14,17 @@ import botRoutes from './routes/bot.js';
 import sourceRoutes from './routes/sources.js';
 import healthRoutes from './routes/health.js';
 
+
+import './models/Source.js';
+import './models/Article.js';
+
 // Load initial seeding helpers
 import { seedDefaultAdmin } from './controllers/authController.js';
 import { seedDefaultSources } from './controllers/sourceController.js';
 
 // Load background scheduler
 import schedulerService from './services/schedulerService.js';
+import './workers/rssWorker.js';
 
 
 const app = express();
@@ -87,24 +93,48 @@ app.use((err, req, res, next) => {
 // Database connection & Server startup
 const startServer = async () => {
   try {
-    logger.info('[Server] Connecting to database...');
+    // Step 1: Connect MongoDB
+    logger.info('[Server] Connecting to MongoDB...');
     await connectDB();
 
-    // Seed initial Admin User & Popular RSS feeds if not present
+    // Step 2: Pre-warm Redis/Memurai connection
+    logger.info('[Server] Connecting to Redis/Memurai...');
+    const redisClient = getRedisClient();
+    // Wait up to 5s for Redis to become ready
+    await new Promise((resolve, reject) => {
+      if (redisClient.status === 'ready') return resolve();
+      const timeout = setTimeout(() => {
+        logger.warn('[Server] Redis did not connect within 5s. Continuing anyway — health endpoint will show degraded status.');
+        resolve(); // Don't crash — Redis might just be slow
+      }, 5000);
+      redisClient.once('ready', () => { clearTimeout(timeout); resolve(); });
+      redisClient.once('error', (err) => {
+        clearTimeout(timeout);
+        logger.warn(`[Server] Redis connection warning: ${err.message}. Make sure Memurai is running.`);
+        resolve(); // Still don't crash — app works without Redis for basic routes
+      });
+    });
+
+    // Step 3: Seed initial Admin User & Popular RSS feeds if not present
     await seedDefaultAdmin();
     await seedDefaultSources();
 
-    // Start background schedulers
+    // Step 4: Start background schedulers
     await schedulerService.initScheduler();
 
     app.listen(PORT, () => {
-      logger.info(`[Server] DevFeed Bot running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-      logger.info(`[Server] API available at: http://localhost:${PORT}/`);
+      logger.info(`[Server] ✅ DevFeed Bot running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+      logger.info(`[Server] 🌐 Dashboard API: http://localhost:${PORT}/`);
+      logger.info(`[Server] 💚 Health Check:  http://localhost:${PORT}/health`);
     });
   } catch (error) {
     logger.error(`[Server] Startup failed: ${error.message}`);
     process.exit(1);
   }
 };
+
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy' });
+});
 
 startServer();

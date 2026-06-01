@@ -29,7 +29,7 @@ const articleSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['AI', 'Tech', 'IT', 'Biotech', 'Neurotech', 'Health', 'Research', 'Funding', 'Company News'],
+    enum: ['AI', 'Tech', 'IT', 'Biotech', 'Neurotech', 'Health', 'Research Labs', 'Funding', 'Company News', 'Data Science', 'Web3', 'Gaming', 'Cloud', 'DevOps', 'Fintech', 'Cybersecurity', 'Open Source', 'Education', 'Productivity', 'Product Hunt', 'Reddit', 'Venture Capital', 'Research', 'AI Safety', 'AI Ethics', 'AI Governance', 'AI Policy', 'AI Applications', 'AI Development', 'AI Tools', 'AI Company'],
     required: true,
     index: true
   },
@@ -50,7 +50,7 @@ const articleSchema = new mongoose.Schema({
     default: 'pending',
     index: true
   },
-  
+
   // Deduplication & Clustering parameters
   isClusterMaster: {
     type: Boolean,
@@ -63,7 +63,7 @@ const articleSchema = new mongoose.Schema({
     default: null,
     index: true
   },
-  
+
   readingTime: {
     type: Number,
     required: true, // estimated read time in minutes
