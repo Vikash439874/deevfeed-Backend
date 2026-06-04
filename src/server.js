@@ -13,6 +13,7 @@ import authRoutes from './routes/auth.js';
 import botRoutes from './routes/bot.js';
 import sourceRoutes from './routes/sources.js';
 import healthRoutes from './routes/health.js';
+import newsRoutes from './routes/news.js';
 
 
 import './models/Source.js';
@@ -57,6 +58,7 @@ app.use('/health', healthRoutes); // Public unthrottled healthcheck endpoint
 app.use('/api/auth', authRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/api/sources', sourceRoutes);
+app.use('/api/news', newsRoutes); // Public news feed + bot submission endpoint
 
 // Base Route
 app.get('/', (req, res) => {
