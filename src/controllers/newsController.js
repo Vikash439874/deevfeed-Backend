@@ -8,8 +8,24 @@ export const getNews = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
-    const category = req.query.category || null;
     const skip = (page - 1) * limit;
+
+    let category = req.query.category || req.query.cat || null;
+    if (category) {
+      // Map lowercase categories from frontend to DB category values
+      const catMap = {
+        ai: 'AI',
+        tech: 'Tech',
+        sci: 'Science',
+        space: 'Space',
+        start: 'Startups',
+        india: 'India',
+        world: 'World',
+        health: 'Health',
+        cyber: 'Cybersecurity'
+      };
+      category = catMap[category.toLowerCase()] || category;
+    }
 
     const filter = { status: 'published' };
     if (category) filter.category = category;
@@ -24,6 +40,7 @@ export const getNews = async (req, res) => {
     ]);
 
     res.json({
+      ok: true,
       articles,
       pagination: {
         total,
