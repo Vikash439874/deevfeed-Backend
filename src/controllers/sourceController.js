@@ -22,25 +22,49 @@ const seedDefaultSources = async () => {
     {
       name: 'GitHub Trending RSS (Ryotarai)',
       url: 'https://github-rss.ryotarai.info/flux/trending/daily/javascript',
-      category: 'IT',
+      category: 'Tech',
       isActive: true
     },
     {
       name: 'Nature Biotech News RSS',
       url: 'https://www.nature.com/nbt.rss',
-      category: 'Biotech',
+      category: 'Science',
       isActive: true
     },
     {
       name: 'MIT Technology Review health',
       url: 'https://www.technologyreview.com/category/biomedicine/feed',
-      category: 'Neurotech',
+      category: 'Health',
       isActive: true
     },
     {
-      name: 'TechCrunch Enterprise RSS',
-      url: 'https://techcrunch.com/category/enterprise/feed/',
-      category: 'Funding',
+      name: 'TechCrunch Startups RSS',
+      url: 'https://techcrunch.com/category/startups/feed/',
+      category: 'Startups',
+      isActive: true
+    },
+    {
+      name: 'NASA Breaking News RSS',
+      url: 'https://www.nasa.gov/feed/',
+      category: 'Space',
+      isActive: true
+    },
+    {
+      name: 'Google News - India Tech RSS',
+      url: 'https://news.google.com/rss/search?q=technology+India&hl=en-IN&gl=IN&ceid=IN:en',
+      category: 'India',
+      isActive: true
+    },
+    {
+      name: 'BBC News Technology RSS',
+      url: 'http://feeds.bbci.co.uk/news/technology/rss.xml',
+      category: 'World',
+      isActive: true
+    },
+    {
+      name: 'Wired Security RSS',
+      url: 'https://www.wired.com/feed/category/security/latest/rss',
+      category: 'Cybersecurity',
       isActive: true
     }
   ];

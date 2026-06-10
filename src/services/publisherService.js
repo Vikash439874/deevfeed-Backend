@@ -20,6 +20,10 @@ class PublisherService {
     const payload = {
       title: article.title,
       summary: article.summary,
+      body: article.body,
+      eli12: article.eli12,
+      keyPoints: article.keyPoints,
+      whyMatters: article.whyMatters,
       category: article.category,
       tags: article.tags.map(t => t.name),
       sourceName: article.sourceName,

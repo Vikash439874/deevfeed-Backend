@@ -35,7 +35,7 @@ export const getNews = async (req, res) => {
         .sort({ publishedAt: -1 })
         .skip(skip)
         .limit(limit)
-        .select('title summary category tags sourceName originalUrl publishedAt readingTime createdAt'),
+        .select('title summary body eli12 keyPoints whyMatters category tags sourceName originalUrl publishedAt readingTime createdAt'),
       Article.countDocuments(filter)
     ]);
 
@@ -73,7 +73,20 @@ export const receiveNews = async (req, res) => {
       }
     }
 
-    const { title, summary, category, tags, sourceName, originalUrl, publishedAt, readingTime } = req.body;
+    const {
+      title,
+      summary,
+      body,
+      eli12,
+      keyPoints,
+      whyMatters,
+      category,
+      tags,
+      sourceName,
+      originalUrl,
+      publishedAt,
+      readingTime
+    } = req.body;
 
     if (!title || !summary || !category || !originalUrl || !sourceName) {
       return res.status(400).json({ error: 'Missing required fields: title, summary, category, originalUrl, sourceName' });
@@ -85,6 +98,10 @@ export const receiveNews = async (req, res) => {
       {
         title,
         summary,
+        body: body || summary,
+        eli12: eli12 || '',
+        keyPoints: Array.isArray(keyPoints) ? keyPoints : [],
+        whyMatters: whyMatters || '',
         category,
         tags: tags ? tags.map(t => ({ name: t, confidence: 1.0 })) : [],
         sourceName,
@@ -113,7 +130,7 @@ export const receiveNews = async (req, res) => {
 export const getNewsById = async (req, res) => {
   try {
     const article = await Article.findById(req.params.id)
-      .select('title summary category tags sourceName originalUrl publishedAt readingTime createdAt');
+      .select('title summary body eli12 keyPoints whyMatters category tags sourceName originalUrl publishedAt readingTime createdAt');
     if (!article) return res.status(404).json({ error: 'Article not found' });
     res.json(article);
   } catch (error) {

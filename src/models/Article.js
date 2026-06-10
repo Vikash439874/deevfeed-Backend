@@ -1,5 +1,21 @@
 import mongoose from 'mongoose';
 
+function cleanGeneratedContent(value = '') {
+  return String(value)
+    .split(/\r?\n+/)
+    .map(line => line.trim())
+    .filter(line => line && !/^[-\s]*(article|comments?)\s+url\s*:/i.test(line))
+    .filter(line => !/^[-\s]*https?:\/\/\S+\s*$/i.test(line))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function hasMeaningfulContent(value = '') {
+  const cleaned = cleanGeneratedContent(value);
+  return cleaned.split(/\s+/).filter(Boolean).length >= 5;
+}
+
 const tagSchema = new mongoose.Schema({
   name: { type: String, required: true },
   confidence: { type: Number, required: true }
@@ -27,9 +43,25 @@ const articleSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  body: {
+    type: String,
+    default: ''
+  },
+  eli12: {
+    type: String,
+    default: ''
+  },
+  keyPoints: {
+    type: [String],
+    default: []
+  },
+  whyMatters: {
+    type: String,
+    default: ''
+  },
   category: {
     type: String,
-    enum: ['AI', 'Tech', 'IT', 'Biotech', 'Neurotech', 'Health', 'Research Labs', 'Funding', 'Company News', 'Data Science', 'Web3', 'Gaming', 'Cloud', 'DevOps', 'Fintech', 'Cybersecurity', 'Open Source', 'Education', 'Productivity', 'Product Hunt', 'Reddit', 'Venture Capital', 'Research', 'AI Safety', 'AI Ethics', 'AI Governance', 'AI Policy', 'AI Applications', 'AI Development', 'AI Tools', 'AI Company'],
+    enum: ['AI', 'Tech', 'IT', 'Biotech', 'Neurotech', 'Health', 'Research Labs', 'Funding', 'Company News', 'Data Science', 'Web3', 'Gaming', 'Cloud', 'DevOps', 'Fintech', 'Cybersecurity', 'Open Source', 'Education', 'Productivity', 'Product Hunt', 'Reddit', 'Venture Capital', 'Research', 'AI Safety', 'AI Ethics', 'AI Governance', 'AI Policy', 'AI Applications', 'AI Development', 'AI Tools', 'AI Company', 'Science', 'Space', 'Startups', 'India', 'World'],
     required: true,
     index: true
   },
@@ -80,6 +112,28 @@ const articleSchema = new mongoose.Schema({
 // Setup indexes for sorting/filtering recent articles
 articleSchema.index({ createdAt: -1 });
 articleSchema.index({ isClusterMaster: 1, createdAt: -1 });
+
+articleSchema.pre('validate', function sanitizeReaderFields(next) {
+  this.summary = cleanGeneratedContent(this.summary);
+  this.body = cleanGeneratedContent(this.body);
+  this.eli12 = cleanGeneratedContent(this.eli12);
+  this.whyMatters = cleanGeneratedContent(this.whyMatters);
+  this.keyPoints = Array.isArray(this.keyPoints)
+    ? this.keyPoints.map(cleanGeneratedContent).filter(hasMeaningfulContent)
+    : [];
+
+  const originalContent = cleanGeneratedContent(this.originalContent);
+
+  if (!hasMeaningfulContent(this.body)) {
+    this.body = hasMeaningfulContent(originalContent) ? originalContent : this.summary || this.title;
+  }
+
+  if (!hasMeaningfulContent(this.summary)) {
+    this.summary = this.body || this.title;
+  }
+
+  next();
+});
 
 const Article = mongoose.model('Article', articleSchema);
 export default Article;

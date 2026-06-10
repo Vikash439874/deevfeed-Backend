@@ -16,7 +16,7 @@ const feedSourceSchema = new mongoose.Schema({
   category: {
     type: String,
     required: [true, 'Feed category is required'],
-    enum: ['AI', 'Tech', 'IT', 'Biotech', 'Neurotech', 'Health', 'Research', 'Funding', 'Company News'],
+    enum: ['AI', 'Tech', 'Science', 'Space', 'Startups', 'India', 'World', 'Health', 'Cybersecurity'],
     default: 'Tech'
   },
   isActive: {
